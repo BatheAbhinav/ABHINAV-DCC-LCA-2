@@ -50,19 +50,16 @@
       max-width: 70%;
       padding: 10px 14px;
       border-radius: 16px;
-      line-height: 1.4;
     }
 
     .user .bubble {
       background: #007bff;
       color: white;
-      border-bottom-right-radius: 4px;
     }
 
     .bot .bubble {
       background: #e5e5ea;
       color: black;
-      border-bottom-left-radius: 4px;
     }
 
     .input-area {
@@ -94,7 +91,7 @@
 
 <body>
 
-  <h2>ABHINAV Chatbot</h2>
+  <h2>ABHINAV Chatbot 🔐</h2>
 
   <div class="container">
     <div id="chat"></div>
@@ -106,6 +103,24 @@
   </div>
 
   <script>
+    // 🔐 Ask password once on app start
+    function getPassword() {
+      let password = localStorage.getItem("auth");
+
+      if (!password) {
+        password = prompt("Enter password to access chatbot:");
+
+        if (!password) {
+          alert("Password is required");
+          return getPassword();
+        }
+
+        localStorage.setItem("auth", password);
+      }
+
+      return password;
+    }
+
     async function sendMessage() {
       const input = document.getElementById("input");
       const chat = document.getElementById("chat");
@@ -113,7 +128,9 @@
       const message = input.value.trim();
       if (!message) return;
 
-      // User message
+      const password = localStorage.getItem("auth");
+
+      // Show user message
       chat.innerHTML += `
         <div class="message user">
           <div class="bubble">${message}</div>
@@ -122,12 +139,11 @@
 
       input.value = "";
 
-      // Optional: loading indicator
+      // Loading
       const loading = document.createElement("div");
       loading.className = "message bot";
       loading.innerHTML = `<div class="bubble">Typing...</div>`;
       chat.appendChild(loading);
-      chat.scrollTop = chat.scrollHeight;
 
       try {
         const res = await fetch("/chat", {
@@ -135,15 +151,21 @@
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ message })
+          body: JSON.stringify({ message, password })
         });
 
         const data = await res.json();
 
-        // Remove loading
         chat.removeChild(loading);
 
-        // Bot reply
+        if (res.status === 401) {
+          // ❌ Wrong password → clear + ask again
+          localStorage.removeItem("auth");
+          alert("Wrong password. Try again.");
+          getPassword();
+          return;
+        }
+
         chat.innerHTML += `
           <div class="message bot">
             <div class="bubble">${data.reply}</div>
@@ -155,7 +177,7 @@
 
         chat.innerHTML += `
           <div class="message bot">
-            <div class="bubble">Error: Could not reach server</div>
+            <div class="bubble">⚠️ Server error</div>
           </div>
         `;
       }
@@ -165,10 +187,10 @@
 
     // Enter key support
     document.getElementById("input").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
+      if (e.key === "Enter") sendMessage();
     });
+
+    getPassword();
   </script>
 
 </body>
