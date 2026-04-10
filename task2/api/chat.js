@@ -7,7 +7,6 @@ export default async function handler(req, res) {
 
   const { message, password } = req.body;
 
-  // 🔐 AUTH CHECK
   if (!password || password !== process.env.APP_PASSWORD) {
     return res.status(401).json({ error: "Unauthorized" });
   }
@@ -27,10 +26,10 @@ export default async function handler(req, res) {
     const result = await model.generateContent(message);
     const reply = result.response.text();
 
-    res.status(200).json({ reply });
+    return res.status(200).json({ reply });
 
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "Server error" });
   }
 }

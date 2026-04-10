@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <title>1032222447</title>
 
@@ -21,7 +22,7 @@
       margin: auto;
       background: white;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       display: flex;
       flex-direction: column;
       height: 80vh;
@@ -103,8 +104,8 @@
   </div>
 
   <script>
-    // 🔐 Ask password once on app start
-    function getPassword() {
+    // 🔐 Get + verify password
+    async function getPassword() {
       let password = localStorage.getItem("auth");
 
       if (!password) {
@@ -115,7 +116,26 @@
           return getPassword();
         }
 
-        localStorage.setItem("auth", password);
+        try {
+          const res = await fetch("/auth", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ password })
+          });
+
+          if (!res.ok) {
+            alert("❌ Wrong password");
+            return getPassword();
+          }
+
+          localStorage.setItem("auth", password);
+
+        } catch (err) {
+          alert("Server error during auth");
+          return getPassword();
+        }
       }
 
       return password;
@@ -128,18 +148,18 @@
       const message = input.value.trim();
       if (!message) return;
 
-      const password = localStorage.getItem("auth");
+      // ✅ ALWAYS ensure valid password
+      const password = await getPassword();
 
       // Show user message
       chat.innerHTML += `
-        <div class="message user">
-          <div class="bubble">${message}</div>
-        </div>
-      `;
+      <div class="message user">
+        <div class="bubble">${message}</div>
+      </div>
+    `;
 
       input.value = "";
 
-      // Loading
       const loading = document.createElement("div");
       loading.className = "message bot";
       loading.innerHTML = `<div class="bubble">Typing...</div>`;
@@ -158,40 +178,49 @@
 
         chat.removeChild(loading);
 
-        if (res.status === 401) {
-          // ❌ Wrong password → clear + ask again
+        // ❌ Handle ALL errors
+        if (!res.ok) {
           localStorage.removeItem("auth");
-          alert("Wrong password. Try again.");
-          getPassword();
+
+          chat.innerHTML += `
+          <div class="message bot">
+            <div class="bubble">❌ ${data.error || "Authentication failed"}</div>
+          </div>
+        `;
+
+          await getPassword();
           return;
         }
 
+        // ✅ Success
         chat.innerHTML += `
-          <div class="message bot">
-            <div class="bubble">${data.reply}</div>
-          </div>
-        `;
+        <div class="message bot">
+          <div class="bubble">${data.reply}</div>
+        </div>
+      `;
 
       } catch (err) {
         chat.removeChild(loading);
 
         chat.innerHTML += `
-          <div class="message bot">
-            <div class="bubble">⚠️ Server error</div>
-          </div>
-        `;
+        <div class="message bot">
+          <div class="bubble">⚠️ Server error</div>
+        </div>
+      `;
       }
 
       chat.scrollTop = chat.scrollHeight;
     }
 
     // Enter key support
-    document.getElementById("input").addEventListener("keypress", function(e) {
+    document.getElementById("input").addEventListener("keypress", function (e) {
       if (e.key === "Enter") sendMessage();
     });
 
+    // ✅ Call without await (important fix)
     getPassword();
   </script>
 
 </body>
+
 </html>
