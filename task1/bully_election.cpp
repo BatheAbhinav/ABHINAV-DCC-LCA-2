@@ -47,7 +47,7 @@ class BullyElection {
                     cout << "Process " << initiator
                         << " sends ELECTION to Process " << i << endl;
 
-                    election(i); // higher process takes over
+                    election(i);
                     return;
                 }
             }
