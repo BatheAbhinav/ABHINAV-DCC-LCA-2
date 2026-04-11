@@ -73,6 +73,9 @@ Current Coordinator is Process 5
 
 # Basic Chatbot Deployment - DCC LCA:2
 
+**Application URL:** https://dcclca2-eight.vercel.app  
+**Password:** 123456
+
 ## Overview
 
 This project is a simple chatbot application that uses the Google Gemini API to generate responses. It is deployed on a cloud platform and includes basic password protection.
